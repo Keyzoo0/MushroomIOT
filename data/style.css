@@ -1,0 +1,39 @@
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+.stat-card { transition: transform .15s ease; }
+.stat-card:hover { transform: translateY(-3px); }
+
+.stat-label {
+  font-size: .8rem;
+  color: #6c757d;
+  margin-top: .25rem;
+}
+.stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.stat-value small { font-size: .9rem; font-weight: 500; color: #6c757d; }
+
+.actuator-box {
+  border: 1px solid #e9ecef;
+  border-radius: .75rem;
+  padding: 1rem;
+  height: 100%;
+}
+.actuator-title { font-weight: 600; }
+.actuator-icon { font-size: 1.6rem; }
+
+.logo-polsri { width: 130px; height: auto; }
+
+.led {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #ced4da;
+  margin-right: .4rem;
+}
+.led.on { box-shadow: 0 0 8px 2px rgba(25,135,84,.6); }
+.led.on-fan  { background: #0d6efd; box-shadow: 0 0 8px 2px rgba(13,110,253,.6); }
+.led.on-lamp { background: #fd7e14; box-shadow: 0 0 8px 2px rgba(253,126,20,.6); }
+.led.on-mist { background: #0dcaf0; box-shadow: 0 0 8px 2px rgba(13,202,240,.6); }

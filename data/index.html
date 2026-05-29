@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Budidaya Jamur</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+
+  <nav class="navbar navbar-dark bg-success shadow-sm">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">
+        <i class="bi bi-moisture"></i> Budidaya Jamur
+      </span>
+      <span class="text-white small">
+        <i id="wifiIcon" class="bi bi-wifi-off"></i>
+        <span id="wifiText">--</span>
+      </span>
+    </div>
+  </nav>
+
+  <div class="container py-3">
+    <!-- TABS -->
+    <ul class="nav nav-pills mb-3 justify-content-center" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabDash">
+        <i class="bi bi-speedometer2"></i> Dashboard</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabSet">
+        <i class="bi bi-gear"></i> Settings</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabInfo">
+        <i class="bi bi-info-circle"></i> Info</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- ============================ DASHBOARD ============================ -->
+      <div class="tab-pane fade show active" id="tabDash">
+
+        <!-- Kartu sensor -->
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-lg-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="bi bi-thermometer-half text-danger fs-2"></i>
+                <div class="stat-label">Suhu</div>
+                <div class="stat-value"><span id="vTemp">--</span><small>°C</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="bi bi-droplet-half text-primary fs-2"></i>
+                <div class="stat-label">Kelembapan Udara</div>
+                <div class="stat-value"><span id="vHum">--</span><small>%</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="bi bi-moisture text-info fs-2"></i>
+                <div class="stat-label">Kelembapan Media</div>
+                <div class="stat-value"><span id="vSoil">--</span><small>%</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+              <div class="card-body text-center">
+                <i class="bi bi-tree text-warning fs-2"></i>
+                <div class="stat-label">Serbuk Gergaji</div>
+                <div class="stat-value"><span id="vSaw">--</span><small>%</small></div>
+                <span id="vSawCond" class="badge bg-secondary mt-1">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kontrol aktuator -->
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-semibold"><i class="bi bi-toggles"></i> Kontrol Aktuator</div>
+          <div class="card-body">
+            <div class="row g-3" id="actuators">
+              <!-- diisi oleh JS -->
+            </div>
+            <p class="text-muted small mb-0 mt-2">
+              Mode <b>AUTO</b>: relay diatur otomatis sesuai threshold di Settings.
+              Mode <b>MANUAL</b>: relay diatur lewat tombol ON/OFF.
+            </p>
+          </div>
+        </div>
+
+        <!-- Grafik -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-graph-up"></i> Grafik 3 Menit Terakhir
+          </div>
+          <div class="card-body">
+            <canvas id="chart" height="120"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================ SETTINGS ============================ -->
+      <div class="tab-pane fade" id="tabSet">
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-semibold"><i class="bi bi-sliders"></i> Threshold Mode Auto</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Suhu Min (°C) — pemanas ON jika di bawah</label>
+                <input type="number" step="0.1" class="form-control" id="sTempMin">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Suhu Max (°C) — fan ON jika di atas</label>
+                <input type="number" step="0.1" class="form-control" id="sTempMax">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Kelembapan Min (%) — mist ON jika di bawah</label>
+                <input type="number" step="0.1" class="form-control" id="sHumMin">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-semibold"><i class="bi bi-rulers"></i> Kalibrasi Media & Serbuk Gergaji</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">ADC Kering (0%)</label>
+                <input type="number" class="form-control" id="sSoilDry">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">ADC Basah (100%)</label>
+                <input type="number" class="form-control" id="sSoilWet">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Batas "Kering" (%)</label>
+                <input type="number" step="0.1" class="form-control" id="sSawDry">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Batas "Basah" (%)</label>
+                <input type="number" step="0.1" class="form-control" id="sSawWet">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+          <div class="card-header bg-white fw-semibold"><i class="bi bi-arrow-repeat"></i> Reverse Logika Relay</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4 form-check form-switch ms-2">
+                <input class="form-check-input" type="checkbox" id="sRevFan">
+                <label class="form-check-label" for="sRevFan">Reverse Relay Fan</label>
+              </div>
+              <div class="col-md-4 form-check form-switch ms-2">
+                <input class="form-check-input" type="checkbox" id="sRevLamp">
+                <label class="form-check-label" for="sRevLamp">Reverse Relay Lampu</label>
+              </div>
+              <div class="col-md-4 form-check form-switch ms-2">
+                <input class="form-check-input" type="checkbox" id="sRevMist">
+                <label class="form-check-label" for="sRevMist">Reverse Relay Mist</label>
+              </div>
+            </div>
+            <p class="text-muted small mb-0 mt-2">Aktifkan jika modul relaymu Active-HIGH (relay menyala terbalik).</p>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-success" id="btnSave"><i class="bi bi-save"></i> Simpan Pengaturan</button>
+          <button class="btn btn-outline-danger" id="btnReset"><i class="bi bi-trash"></i> Reset Data Grafik</button>
+        </div>
+      </div>
+
+      <!-- ============================== INFO ============================== -->
+      <div class="tab-pane fade" id="tabInfo">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-4">
+            <img src="https://www.polsri.ac.id/files/2011/01/logo-polsri.png"
+                 alt="Logo Politeknik Negeri Sriwijaya" class="logo-polsri mb-3"
+                 onerror="this.style.display='none'">
+            <h5 class="fw-bold text-success mb-1">RANCANG BANGUN SISTEM BUDIDAYA JAMUR TIRAM</h5>
+            <p class="text-muted mb-4">dengan Parameter Suhu, Kelembaban, dan Kelembapan Tanah Berbasis IoT</p>
+
+            <div class="row justify-content-center">
+              <div class="col-md-7">
+                <table class="table table-borderless text-start mb-0">
+                  <tbody>
+                    <tr><th class="text-muted w-50">Nama</th><td>Muhammad Dzakwan Al Buchori</td></tr>
+                    <tr><th class="text-muted">NIM</th><td>062330701497</td></tr>
+                    <tr><th class="text-muted">Program Studi</th><td>D3 Teknik Komputer</td></tr>
+                    <tr><th class="text-muted">Jurusan</th><td>Teknik Komputer</td></tr>
+                    <tr><th class="text-muted">Institusi</th><td>Politeknik Negeri Sriwijaya</td></tr>
+                    <tr><th class="text-muted">Tahun</th><td>2026</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <hr class="my-4">
+            <p class="text-muted small mb-0">
+              Laporan Tugas Akhir &mdash; disusun untuk memenuhi syarat menyelesaikan pendidikan
+              pada Program Studi D3 Teknik Komputer, Jurusan Teknik Komputer,
+              Politeknik Negeri Sriwijaya, Palembang.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toast" class="toast align-items-center text-bg-success border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMsg">OK</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
