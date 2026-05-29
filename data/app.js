@@ -16,23 +16,25 @@ const post = (url, body) => fetch(url, {
 
 // --------------------------- aktuator UI -----------------------------------
 const ACTS = [
-  { key: 'fan',  name: 'Fan (Pendingin)', icon: 'bi-fan',       cls: 'on-fan',  color: 'text-primary' },
-  { key: 'lamp', name: 'Lampu (Pemanas)', icon: 'bi-lightbulb', cls: 'on-lamp', color: 'text-warning' },
-  { key: 'mist', name: 'Mist Maker',      icon: 'bi-cloud-fog2',cls: 'on-mist', color: 'text-info' }
+  { key: 'fan',  name: 'Fan (Pendingin)', icon: 'bi-fan',        cls: 'act-fan' },
+  { key: 'lamp', name: 'Lampu (Pemanas)', icon: 'bi-lightbulb',  cls: 'act-lamp' },
+  { key: 'mist', name: 'Mist Maker',      icon: 'bi-cloud-fog2', cls: 'act-mist' }
 ];
 
 function buildActuators() {
   $('actuators').innerHTML = ACTS.map(a => `
     <div class="col-md-4">
-      <div class="actuator-box">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="actuator-title"><i class="bi ${a.icon} actuator-icon ${a.color}"></i> ${a.name}</span>
-          <span><span class="led" id="led_${a.key}"></span><span id="st_${a.key}" class="small text-muted">OFF</span></span>
+      <div class="actuator-box ${a.cls}" id="box_${a.key}">
+        <div class="actuator-head">
+          <span class="actuator-title">
+            <span class="actuator-ic"><i class="bi ${a.icon}"></i></span> ${a.name}
+          </span>
+          <span class="status-pill" id="st_${a.key}">OFF</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="actuator-foot">
           <div class="form-check form-switch mb-0">
             <input class="form-check-input mode-sw" type="checkbox" id="mode_${a.key}" data-act="${a.key}">
-            <label class="form-check-label small" for="mode_${a.key}" id="modelbl_${a.key}">AUTO</label>
+            <label class="form-check-label mode-tag" for="mode_${a.key}" id="modelbl_${a.key}">AUTO</label>
           </div>
           <div class="btn-group btn-group-sm" role="group">
             <button class="btn btn-outline-success btn-on"  data-act="${a.key}" data-on="1">ON</button>
@@ -74,9 +76,10 @@ function refreshData() {
 
     ACTS.forEach(a => {
       const s = d.act[a.key];
-      const led = $('led_' + a.key);
-      led.className = 'led' + (s.on ? ' on ' + a.cls : '');
-      $('st_' + a.key).textContent = s.on ? 'ON' : 'OFF';
+      const pill = $('st_' + a.key);
+      pill.textContent = s.on ? 'ON' : 'OFF';
+      pill.classList.toggle('on', s.on);
+      $('box_' + a.key).classList.toggle('is-on', s.on);
       const sw = $('mode_' + a.key);
       sw.checked = !s.auto;                       // checked = MANUAL
       $('modelbl_' + a.key).textContent = s.auto ? 'AUTO' : 'MANUAL';
@@ -84,55 +87,66 @@ function refreshData() {
       document.querySelectorAll(`.btn-on[data-act="${a.key}"]`).forEach(b => b.disabled = s.auto);
     });
 
+    const chip = $('wifiChip');
     if (d.wifi) {
+      chip.classList.remove('off');
       $('wifiIcon').className = 'bi bi-wifi';
-      $('wifiText').textContent = d.ip + ' (' + d.rssi + ' dBm)';
+      $('wifiText').textContent = d.ip + ' · ' + d.rssi + ' dBm';
+      $('footIp').textContent = d.ip;
     } else {
+      chip.classList.add('off');
       $('wifiIcon').className = 'bi bi-wifi-off';
-      $('wifiText').textContent = 'Disconnected';
+      $('wifiText').textContent = 'Terputus';
     }
   }).catch(() => {});
 }
 
 // ------------------------------ grafik -------------------------------------
-let chart;
-function initChart() {
-  const ctx = $('chart').getContext('2d');
-  const ds = (label, color) => ({
-    label, data: [], borderColor: color, backgroundColor: color + '22',
-    tension: .3, pointRadius: 0, borderWidth: 2
-  });
-  chart = new Chart(ctx, {
+const charts = {};
+function makeChart(canvasId, label, color, unit) {
+  const ctx = $(canvasId).getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 180);
+  grad.addColorStop(0, color + '40');
+  grad.addColorStop(1, color + '05');
+  return new Chart(ctx, {
     type: 'line',
     data: {
       labels: [],
-      datasets: [
-        ds('Suhu (°C)', '#dc3545'),
-        ds('Kelembapan (%)', '#0d6efd'),
-        ds('Kelembapan Media (%)', '#0dcaf0'),
-        ds('Serbuk Gergaji (%)', '#fd7e14')
-      ]
+      datasets: [{
+        label, data: [], borderColor: color, backgroundColor: grad,
+        tension: .35, pointRadius: 0, borderWidth: 2.5, fill: true
+      }]
     },
     options: {
       responsive: true,
       animation: false,
       interaction: { mode: 'index', intersect: false },
-      scales: { y: { beginAtZero: true, suggestedMax: 100 } },
-      plugins: { legend: { position: 'top' } }
+      scales: {
+        y: { beginAtZero: false, grid: { color: '#eef1ee' }, ticks: { callback: v => v + unit } },
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 6, autoSkip: true } }
+      },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + unit } } }
     }
   });
+}
+
+function initChart() {
+  charts.temp = makeChart('chartTemp', 'Suhu',            '#ef5350', '°C');
+  charts.hum  = makeChart('chartHum',  'Kelembapan Udara','#29b6f6', '%');
+  charts.soil = makeChart('chartSoil', 'Kelembapan Tanah','#26a69a', '%');
+  charts.saw  = makeChart('chartSaw',  'Serbuk Gergaji',  '#ff9800', '%');
 }
 
 function refreshGraph() {
   fetch('/api/graph').then(r => r.json()).then(g => {
     const n = (g.temp || []).length;
     // label waktu relatif: titik tiap 3 detik, terbaru = 0s
-    chart.data.labels = Array.from({ length: n }, (_, i) => '-' + ((n - 1 - i) * 3) + 's');
-    chart.data.datasets[0].data = g.temp;
-    chart.data.datasets[1].data = g.hum;
-    chart.data.datasets[2].data = g.soil;
-    chart.data.datasets[3].data = g.saw;
-    chart.update();
+    const labels = Array.from({ length: n }, (_, i) => '-' + ((n - 1 - i) * 3) + 's');
+    const apply = (c, data) => { c.data.labels = labels; c.data.datasets[0].data = data; c.update(); };
+    apply(charts.temp, g.temp);
+    apply(charts.hum,  g.hum);
+    apply(charts.soil, g.soil);
+    apply(charts.saw,  g.saw);
   }).catch(() => {});
 }
 
