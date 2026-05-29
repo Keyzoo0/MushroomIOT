@@ -20,6 +20,7 @@
  * ==========================================================================*/
 
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <Wire.h>
 #include <LittleFS.h>
 #include <Preferences.h>
@@ -383,6 +384,14 @@ void setup() {
   }
   Serial.println();
   if (WiFi.status()==WL_CONNECTED) Serial.println("IP: " + WiFi.localIP().toString());
+
+  // mDNS -> akses lewat http://jamur.local
+  if (MDNS.begin("jamur")) {
+    MDNS.addService("http", "tcp", 80);
+    Serial.println("mDNS aktif: http://jamur.local");
+  } else {
+    Serial.println("mDNS gagal start");
+  }
 
   setupServer();
   readSensors();

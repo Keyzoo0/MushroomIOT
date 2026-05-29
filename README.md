@@ -80,7 +80,8 @@ data/                 File web yang di-upload ke LittleFS
 3. Upload UI ke LittleFS: **Tools → ESP32 LittleFS Data Upload**
    (plugin [arduino-littlefs-upload](https://github.com/earlephilhower/arduino-littlefs-upload)).
 4. Buka **Serial Monitor** (115200) untuk melihat alamat IP ESP32.
-5. Akses IP tersebut dari browser (HP/laptop pada jaringan yang sama, dengan internet untuk memuat CDN).
+5. Akses lewat browser di **http://jamur.local** (mDNS) atau langsung via alamat IP-nya.
+   Perangkat harus berada pada jaringan yang sama dan terhubung internet untuk memuat CDN.
 6. Kalibrasi sensor soil melalui tab **Settings** (isi nilai ADC kering & basah sesuai pengukuran).
 
 ## REST API
