@@ -129,63 +129,97 @@ graph TB
 | 6 | **Resistor 220Ω × 2** | Pembatas arus LED | ~Rp 1.000 |
 | 7 | **Power Supply 5V/2A** | Catu daya sistem | ~Rp 30.000 |
 
-### 🔌 Peta Pin ESP32
+### 🔌 Wiring Diagram Hardware
 
 ```mermaid
-graph LR
-    subgraph "ESP32 DevKit V1"
+flowchart TD
+    subgraph PS["🔌 Power Supply 5V/2A"]
+        PS_VCC["VCC (+5V)"]
+        PS_GND["GND"]
+    end
+
+    subgraph ESP["ESP32 DevKit V1"]
         direction TB
-        G21["GPIO 21<br><b>SDA</b>"]
-        G22["GPIO 22<br><b>SCL</b>"]
-        G34["GPIO 34<br><b>Soil ADC</b>"]
-        G25["GPIO 25<br><b>Relay Fan</b>"]
-        G26["GPIO 26<br><b>Relay Lamp</b>"]
-        G27["GPIO 27<br><b>Relay Mist</b>"]
-        G16["GPIO 16<br><b>LED Hijau</b>"]
-        G17["GPIO 17<br><b>LED Merah</b>"]
-        V33["3.3V"]
-        V5["5V"]
-        GND["GND"]
+        ESP_3V3["3.3V"]
+        ESP_VIN["VIN (5V)"]
+        ESP_G["GND"]
+        ESP_21["GPIO 21"]
+        ESP_22["GPIO 22"]
+        ESP_34["GPIO 34<br>(ADC)"]
+        ESP_25["GPIO 25"]
+        ESP_26["GPIO 26"]
+        ESP_27["GPIO 27"]
+        ESP_16["GPIO 16"]
+        ESP_17["GPIO 17"]
     end
 
-    subgraph "GY-SHT31"
-        SDA["SDA"]
-        SCL["SCL"]
-        VIN["VIN"]
-        GND_S["GND"]
+    subgraph SHT["🌡️ GY-SHT31"]
+        SHT_VIN["VIN"]
+        SHT_G["GND"]
+        SHT_SDA["SDA"]
+        SHT_SCL["SCL"]
     end
 
-    subgraph "Soil Moisture"
-        SO_AO["AO"]
-        SO_VCC["VCC"]
-        SO_GND["GND"]
+    subgraph SOIL["🌍 Capacitive Soil Moisture"]
+        SOIL_VCC["VCC"]
+        SOIL_G["GND"]
+        SOIL_AO["AO (Analog)"]
     end
 
-    subgraph "Relay Module"
-        R_IN1["IN1 (Fan)"]
-        R_IN2["IN2 (Lamp)"]
-        R_IN3["IN3 (Mist)"]
-        R_VCC["VCC"]
-        R_GND["GND"]
+    subgraph RELAY["🔌 Relay 3-Channel"]
+        RELAY_VCC["VCC"]
+        RELAY_G["GND"]
+        RELAY_IN1["IN1 (Fan)"]
+        RELAY_IN2["IN2 (Lamp)"]
+        RELAY_IN3["IN3 (Mist)"]
     end
 
-    G21 --> SDA
-    G22 --> SCL
-    V33 --> VIN
-    GND --> GND_S
+    subgraph LEDS["💡 Indikator LED"]
+        LED_G["🟢 LED Hijau<br>Anoda"]
+        LED_R["🔴 LED Merah<br>Anoda"]
+    end
 
-    G34 --> SO_AO
-    V33 --> SO_VCC
-    GND --> SO_GND
+    subgraph LOAD["⚡ Beban AC 220V"]
+        LOAD_FAN["💨 Fan"]
+        LOAD_LAMP["💡 Lampu<br>Pemanas"]
+        LOAD_MIST["🌫️ Mist Maker"]
+    end
 
-    G25 --> R_IN1
-    G26 --> R_IN2
-    G27 --> R_IN3
-    V5 --> R_VCC
-    GND --> R_GND
+    ESP_VIN --> PS_VCC
+    
+    PS_GND --- ESP_G
+    PS_GND --- SHT_G
+    PS_GND --- SOIL_G
+    PS_GND --- RELAY_G
+    PS_GND --- LED_G["🔴 Katoda LED"]
+    PS_GND --- LED_R["🟢 Katoda LED"]
 
-    G16 -- "220Ω" --> L1["🟢 LED<br>Hijau"]
-    G17 -- "220Ω" --> L2["🔴 LED<br>Merah"]
+    ESP_3V3 --> SHT_VIN
+    ESP_3V3 --> SOIL_VCC
+
+    ESP_21 --> SHT_SDA
+    ESP_22 --> SHT_SCL
+    ESP_34 --> SOIL_AO
+
+    ESP_25 --> RELAY_IN1
+    ESP_26 --> RELAY_IN2
+    ESP_27 --> RELAY_IN3
+
+    ESP_16 -->|"220Ω"| LED_G
+    ESP_17 -->|"220Ω"| LED_R
+
+    RELAY_VCC --> PS_VCC
+
+    RELAY --> LOAD_FAN
+    RELAY --> LOAD_LAMP
+    RELAY --> LOAD_MIST
+
+    style ESP fill:#1b5e20,color:#fff
+    style SHT fill:#29b6f6,color:#fff
+    style SOIL fill:#26a69a,color:#fff
+    style RELAY fill:#e65100,color:#fff
+    style PS fill:#555,color:#fff
+    style LOAD fill:#f57c00,color:#fff
 ```
 
 ### 📊 Tabel Pin Lengkap
@@ -272,28 +306,29 @@ stateDiagram-v2
     [*] --> AUTO
     
     state AUTO {
-        [*] --> CekSuhu
-        [*] --> CekHum
+        [*] --> Monitor
         
-        CekSuhu --> FanON : suhu > tempMax
-        CekSuhu --> FanOFF : suhu <= tempMax
-        CekSuhu --> LampON : suhu < tempMin
-        CekSuhu --> LampOFF : suhu >= tempMin
+        Monitor --> FanON : suhu > tempMax
+        Monitor --> LampON : suhu < tempMin
+        Monitor --> MistON : humidity < humMin
+        Monitor --> AllOFF : semua dalam batas
         
-        CekHum --> MistON : humidity < humMin
-        CekHum --> MistOFF : humidity >= humMin
+        FanON --> Monitor
+        LampON --> Monitor
+        MistON --> Monitor
+        AllOFF --> Monitor
     }
     
     state MANUAL {
-        [*] --> TungguInput
-        TungguInput --> SetON : user klik ON
-        TungguInput --> SetOFF : user klik OFF
-        SetON --> TungguInput
-        SetOFF --> TungguInput
+        [*] --> Idle
+        Idle --> ON : user klik ON
+        Idle --> OFF : user klik OFF
+        ON --> Idle
+        OFF --> Idle
     }
     
-    AUTO --> MANUAL : POST /api/mode <br/>auto: false
-    MANUAL --> AUTO : POST /api/mode <br/>auto: true
+    AUTO --> MANUAL : mode manual
+    MANUAL --> AUTO : mode auto
 ```
 
 ---
@@ -416,16 +451,16 @@ Tools → ESP32 LittleFS Data Upload
 ### Endpoints
 
 ```mermaid
-graph LR
-    subgraph "API Endpoints"
-        D["GET /api/data"]
-        S1["GET /api/settings"]
-        S2["POST /api/settings"]
-        M["POST /api/mode"]
-        A["POST /api/actuator"]
-        G1["GET /api/graph"]
-        G2["POST /api/graph/reset"]
-    end
+flowchart TD
+    Client["🌐 Browser"] -->|HTTP Request| Server["⚡ ESP32<br>AsyncWebServer"]
+
+    Server --> EP1["GET /api/data"]
+    Server --> EP2["GET /api/settings"]
+    Server --> EP3["POST /api/settings"]
+    Server --> EP4["POST /api/mode"]
+    Server --> EP5["POST /api/actuator"]
+    Server --> EP6["GET /api/graph"]
+    Server --> EP7["POST /api/graph/reset"]
 ```
 
 | Method | Endpoint | Request Body | Response | Fungsi |
