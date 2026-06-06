@@ -64,9 +64,6 @@ struct Settings {
   int   soilWetADC = 1200;  // pembacaan ADC saat basah (tercelup air)
   float sawDryMax  = 50.0;  // <= ini -> serbuk gergaji "Kering"
   float sawWetMin  = 70.0;  // >= ini -> serbuk gergaji "Basah"
-  bool  revFan  = false;    // reverse logika relay (default Active-LOW)
-  bool  revLamp = false;
-  bool  revMist = false;
   bool  autoFan  = true;    // mode tiap aktuator: true=AUTO, false=MANUAL
   bool  autoLamp = true;
   bool  autoMist = true;
@@ -103,9 +100,6 @@ void loadSettings() {
   cfg.soilWetADC= prefs.getInt  ("soilWet",  cfg.soilWetADC);
   cfg.sawDryMax = prefs.getFloat("sawDry",   cfg.sawDryMax);
   cfg.sawWetMin = prefs.getFloat("sawWet",   cfg.sawWetMin);
-  cfg.revFan    = prefs.getBool ("revFan",   cfg.revFan);
-  cfg.revLamp   = prefs.getBool ("revLamp",  cfg.revLamp);
-  cfg.revMist   = prefs.getBool ("revMist",  cfg.revMist);
   cfg.autoFan   = prefs.getBool ("autoFan",  cfg.autoFan);
   cfg.autoLamp  = prefs.getBool ("autoLamp", cfg.autoLamp);
   cfg.autoMist  = prefs.getBool ("autoMist", cfg.autoMist);
@@ -124,9 +118,6 @@ void saveSettings() {
   prefs.putInt  ("soilWet",  cfg.soilWetADC);
   prefs.putFloat("sawDry",   cfg.sawDryMax);
   prefs.putFloat("sawWet",   cfg.sawWetMin);
-  prefs.putBool ("revFan",   cfg.revFan);
-  prefs.putBool ("revLamp",  cfg.revLamp);
-  prefs.putBool ("revMist",  cfg.revMist);
   prefs.putBool ("autoFan",  cfg.autoFan);
   prefs.putBool ("autoLamp", cfg.autoLamp);
   prefs.putBool ("autoMist", cfg.autoMist);
@@ -164,10 +155,9 @@ void readSensors() {
 }
 
 // =============================== KONTROL ===================================
-void writeRelay(int pin, bool on, bool reversed) {
-  // default Active-LOW: LOW = ON. 'reversed' membalik logika.
+void writeRelay(int pin, bool on, bool activeLow = true) {
   bool level = on ? LOW : HIGH;
-  if (reversed) level = !level;
+  if (!activeLow) level = !level;
   digitalWrite(pin, level);
 }
 
@@ -179,9 +169,9 @@ void applyControl() {
   // MIST: kelembapan udara terlalu kering
   relayMist = cfg.autoMist ? (humidity    < cfg.humMin)  : cfg.manMist;
 
-  writeRelay(PIN_RELAY_FAN,  relayFan,  cfg.revFan);
-  writeRelay(PIN_RELAY_LAMP, relayLamp, cfg.revLamp);
-  writeRelay(PIN_RELAY_MIST, relayMist, cfg.revMist);
+  writeRelay(PIN_RELAY_FAN,  relayFan);
+  writeRelay(PIN_RELAY_LAMP, relayLamp, false);   // Active-HIGH
+  writeRelay(PIN_RELAY_MIST, relayMist);
 }
 
 // =============================== GRAFIK ====================================
@@ -274,7 +264,6 @@ void handleGetSettings(AsyncWebServerRequest *req) {
   d["tempMin"]=cfg.tempMin; d["tempMax"]=cfg.tempMax; d["humMin"]=cfg.humMin;
   d["soilDryADC"]=cfg.soilDryADC; d["soilWetADC"]=cfg.soilWetADC;
   d["sawDryMax"]=cfg.sawDryMax;   d["sawWetMin"]=cfg.sawWetMin;
-  d["revFan"]=cfg.revFan; d["revLamp"]=cfg.revLamp; d["revMist"]=cfg.revMist;
   serializeJson(d, *res);
   req->send(res);
 }
@@ -288,9 +277,6 @@ void handlePostSettings(AsyncWebServerRequest *req, JsonVariant &json) {
   if (o.containsKey("soilWetADC")) cfg.soilWetADC= o["soilWetADC"];
   if (o.containsKey("sawDryMax"))  cfg.sawDryMax = o["sawDryMax"];
   if (o.containsKey("sawWetMin"))  cfg.sawWetMin = o["sawWetMin"];
-  if (o.containsKey("revFan"))     cfg.revFan    = o["revFan"];
-  if (o.containsKey("revLamp"))    cfg.revLamp   = o["revLamp"];
-  if (o.containsKey("revMist"))    cfg.revMist   = o["revMist"];
   saveSettings();
   applyControl();
   req->send(200, "application/json", "{\"ok\":true}");
@@ -357,10 +343,10 @@ void setup() {
   pinMode(PIN_LED_RED, OUTPUT);
 
   loadSettings();
-  // matikan semua relay sesuai logika awal
-  writeRelay(PIN_RELAY_FAN,  false, cfg.revFan);
-  writeRelay(PIN_RELAY_LAMP, false, cfg.revLamp);
-  writeRelay(PIN_RELAY_MIST, false, cfg.revMist);
+  // matikan semua relay
+  writeRelay(PIN_RELAY_FAN,  false);
+  writeRelay(PIN_RELAY_LAMP, false, false);   // Active-HIGH: HIGH = OFF
+  writeRelay(PIN_RELAY_MIST, false);
 
   analogReadResolution(12);                 // ADC 0-4095
   analogSetPinAttenuation(PIN_SOIL, ADC_11db);

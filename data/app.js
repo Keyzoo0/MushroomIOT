@@ -160,9 +160,6 @@ function loadSettings() {
     $('sSoilWet').value = s.soilWetADC;
     $('sSawDry').value  = s.sawDryMax;
     $('sSawWet').value  = s.sawWetMin;
-    $('sRevFan').checked  = s.revFan;
-    $('sRevLamp').checked = s.revLamp;
-    $('sRevMist').checked = s.revMist;
   });
 }
 
@@ -174,10 +171,7 @@ $('btnSave').addEventListener('click', () => {
     soilDryADC: parseInt($('sSoilDry').value),
     soilWetADC: parseInt($('sSoilWet').value),
     sawDryMax: parseFloat($('sSawDry').value),
-    sawWetMin: parseFloat($('sSawWet').value),
-    revFan:  $('sRevFan').checked,
-    revLamp: $('sRevLamp').checked,
-    revMist: $('sRevMist').checked
+    sawWetMin: parseFloat($('sSawWet').value)
   };
   post('/api/settings', body).then(() => { toast('Pengaturan disimpan'); refreshData(); });
 });

@@ -22,7 +22,7 @@ Tugas Akhir — Program Studi D3 Teknik Komputer, Jurusan Teknik Komputer, **Pol
   - Relay **Fan** (pendingin) — ON saat suhu di atas batas.
   - Relay **Lampu** (pemanas) — ON saat suhu di bawah batas.
   - Relay **Mist Maker** (penambah kelembapan) — ON saat kelembapan udara di bawah batas.
-- **Pengaturan via web** (tab Settings): threshold auto, kalibrasi ADC soil, batas status serbuk gergaji, **reverse logika relay** (3 toggle terpisah), dan **reset data grafik**.
+- **Pengaturan via web** (tab Settings): threshold auto, kalibrasi ADC soil, batas status serbuk gergaji, dan **reset data grafik**.
 - **Indikator LED**: hijau = WiFi terhubung, merah berkedip = terputus/reconnecting.
 - Pengaturan tersimpan permanen di **Preferences (NVS)**, tahan reboot.
 - UI **Bootstrap 5 + Chart.js** (via CDN), 3 tab: Dashboard, Settings, Info.
@@ -48,6 +48,14 @@ Tugas Akhir — Program Studi D3 Teknik Komputer, Jurusan Teknik Komputer, **Pol
 | Relay Mist | 27 |
 | LED Hijau | 16 |
 | LED Merah | 17 |
+
+### Logika Relay
+
+| Relay | Logika | Keterangan |
+|-------|--------|------------|
+| Fan (GPIO 25) | **Active-LOW** (LOW = ON) | Relay aktif saat level LOW |
+| Lampu (GPIO 26) | **Active-HIGH** (HIGH = ON) | Relay aktif saat level HIGH |
+| Mist (GPIO 27) | **Active-LOW** (LOW = ON) | Relay aktif saat level LOW |
 
 ## Perangkat Lunak
 
